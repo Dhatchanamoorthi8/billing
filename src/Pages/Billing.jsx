@@ -1,8 +1,6 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
-import { Link, json } from 'react-router-dom'
 import Swal from 'sweetalert2'
-import PrintTemplate from './PrintTemplate'
 import 'react-bootstrap-typeahead/css/Typeahead.css';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import { Form, InputGroup } from 'react-bootstrap';
@@ -62,7 +60,21 @@ const Billing = () => {
       try {
         const res = await axios.get(`${apiUrl}/drop-down-supplierdatas?SupplierName=${SupplierName[0] || ''}`);
         const Producatname = res.data.map((data) => data.productid);
-        setproductalldata({ ...productalldata, ProducatName: Producatname });
+
+        const namesArray = Producatname[0].split(",");
+
+        // Creating an array of objects with separate names and ids
+        const updatedOption = namesArray.map((name, index) => ({
+          name,
+        }));
+      
+
+
+        console.log('====================================');
+        console.log(updatedOption, "data");
+        console.log('====================================');
+
+        setproductalldata({ ...productalldata, ProducatName: updatedOption });
       } catch (err) {
         console.log(err);
       }
@@ -273,7 +285,7 @@ const Billing = () => {
             <Form.Label>Select The Product</Form.Label>
             <Typeahead
               id="basic-typeahead-multiple"
-              labelKey="ProducatName"
+              labelKey="name"
               multiple
               options={productalldata.ProducatName}
               onChange={SetProductSelection}
@@ -283,22 +295,22 @@ const Billing = () => {
           </Form.Group>
 
           <div className={`quantity-of-product col-12 col-md-6 col-lg-10 col-xl-12 gap-4 mb-2 d-flex flex-wrap ${ProductSelection.length > 0 ? 'd-flex' : 'd-none'}`} >
-            {quantities.map((data, index) => (
-              data.quantity !== '' && (
-                <Form.Label key={index} className='col flex-wrap'>{data.product} available Quantity
-                  <InputGroup className="mb-3 mt-2" key={index}>
+            <Form.Label className='col flex-wrap'>Available Quantity
+              <InputGroup className="mb-3 mt-2" >
+                {quantities.map((data, index) => (
+                  data.quantity !== '' && (
                     <Form.Control
                       placeholder="Product available Quantity"
                       aria-label="Quantity"
                       aria-describedby="basic-addon1"
+                      multiple
                       readOnly
-                      value={"Quantity :  " + data.quantity + "Kg" + "        " + "Amount : " + data.Amount}
-                    />
-                    <InputGroup.Text id="basic-addon1" key={index}>Kg   and  ₹‎</InputGroup.Text>
-                  </InputGroup>
-                </Form.Label>
-              )
-            ))}
+                      value={data.product + "   " + "Qty:  " + data.quantity + "Kg" + "        " + "price : " + data.Amount}
+                      key={index}
+                    />)))}
+              </InputGroup>
+            </Form.Label>
+
           </div>
 
 
@@ -388,7 +400,6 @@ const Billing = () => {
             <thead className="bg-gray-50 border-b-2 border-gray-200">
               <tr>
                 <th className="w-30 p-3 text-sm font-semibold tracking-wide text-left">Sno</th>
-                <th className="p-3 text-sm font-semibold tracking-wide text-center">Supplier Name</th>
                 <th className="p-3 text-sm font-semibold tracking-wide text-center">Product Name</th>
                 <th className="p-3 text-sm font-semibold tracking-wide text-center">Quantity</th>
                 <th className="p-3 text-sm font-semibold tracking-wide text-center">Amount</th>
@@ -402,11 +413,6 @@ const Billing = () => {
                   <td className="p-3 text-sm text-gray-700 whitespace-nowrap">
                     <p className="font-bold text-blue-500 hover:underline">{index}</p>
                   </td>
-
-                  <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-center">
-                    {data.Suppliername}
-                  </td>
-
                   <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-center">
                     {data.productname}
                   </td>
@@ -426,10 +432,7 @@ const Billing = () => {
               })}
             </tbody>
             <tfoot>
-              <tr className="bg-white border " >
-                <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-center">
-
-                </td>
+              <tr className="bg-white border" >
                 <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-center">
 
                 </td>
@@ -437,13 +440,13 @@ const Billing = () => {
 
                 </td>
                 <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-start">
-                 <p className='ps-4'>Total Quantity : <span className=' fw-semibold fs-5 mt-3'>{OverallTotalvalue.totalquantity}</span> </p> 
+                  <p className='ps-4'>Total Quantity : <span className=' fw-semibold fs-5 mt-3'>{OverallTotalvalue.totalquantity}</span> </p>
                 </td>
                 <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-start">
-                 <p className='ps-4'>Total Amount : <span className=' fw-semibold fs-5 mt-3'>{OverallTotalvalue.totalAmount}</span></p> 
+                  <p className='ps-4'>Total Amount : <span className=' fw-semibold fs-5 mt-3'>{OverallTotalvalue.totalAmount}</span></p>
                 </td>
                 <td className="p-3 text-sm text-gray-700 whitespace-nowrap text-center">
-                  Total Amount
+                  <button className={`btn btn-success  ${tabledata.length > 0 ? '' : 'disabled'} `}>Save Bill</button>
                 </td>
               </tr>
             </tfoot>

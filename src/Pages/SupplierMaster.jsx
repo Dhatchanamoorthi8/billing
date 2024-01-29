@@ -6,7 +6,8 @@ import { IoIosClose } from "react-icons/io";
 import { ToastContainer, toast } from 'react-toastify';
 import Swal from 'sweetalert2'
 import { Modal } from 'react-bootstrap';
-
+import { Typeahead } from 'react-bootstrap-typeahead';
+import { Form } from 'react-bootstrap';
 
 function SupplierMaster() {
   const apiUrl = process.env.REACT_APP_API_BASE_URL
@@ -58,7 +59,6 @@ function SupplierMaster() {
       .catch((err) => console.log(err))
     branchtabledata()
   }, [])
-
 
 
 
@@ -166,7 +166,7 @@ function SupplierMaster() {
               .then((res) => {
                 console.log(res)
                 setloader(false);
-                setSupplierData({ ...SupplierData, Suppliername: "", status: "", phoneno: "", Qtykg: "", Amount: "",Address:"" });
+                setSupplierData({ ...SupplierData, Suppliername: "", status: "", phoneno: "", Qtykg: "", Amount: "", Address: "" });
                 setselectedProductId({ selectedProductId: 0 })
                 const functionThatReturnPromise = () =>
                   new Promise((resolve) => setTimeout(resolve, 500));
@@ -413,6 +413,105 @@ function SupplierMaster() {
     }
   };
 
+  const [ProductSelection, SetProductSelection] = useState([]);
+
+  useEffect(() => {
+    const value = ProductSelection.map((data) => {
+      return data.productname;
+    });
+    const joinedValues = value.join(',');
+    setselectedProductId(joinedValues);
+  }, [ProductSelection]);
+
+
+  const [productQuantity, setProductQuantity] = useState([])
+
+  console.log('====================================');
+  console.log(productQuantity);
+  console.log('====================================');
+
+  const getvalue = async (selectedProducts) => {
+    // Check if products are selected
+    if (selectedProducts.length > 0) {
+      const productDetails = [];
+  
+      for (const product of selectedProducts) {
+        let quantity, price;
+  
+        do {
+          // Prompt the user to enter a quantity
+          const result = await Swal.fire({
+            title: `Enter Quantity for ${product.productname}`,
+            input: "tel",
+            inputLabel: `Quantity for ${product.productname}`,
+            inputPlaceholder: "Enter Quantity",
+          });
+  
+          // Check the result
+          if (result.isConfirmed) {
+            quantity = result.value;
+  
+            if (quantity === '' || isNaN(quantity)) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Please Enter a Valid Quantity'
+              });
+            }
+          } else {
+            return;
+          }
+        } while (quantity === ''); // Continue the loop if the quantity is empty or not a number
+  
+        do {
+          // Prompt the user to enter a price
+          const priceResult = await Swal.fire({
+            title: `Enter Price for ${product.productname}`,
+            input: "tel",
+            inputLabel: `Price for ${product.productname}`,
+            inputPlaceholder: "Enter Price",
+          });
+  
+          // Check the result
+          if (priceResult.isConfirmed) {
+            price = priceResult.value;
+  
+            if (price === '' || isNaN(price)) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Please Enter a Valid Price'
+              });
+            }
+          } else {
+            return;
+          }
+        } while (price === ''); // Continue the loop if the price is empty or not a number
+  
+        // Add product details to the array
+        productDetails.push({
+          productId: product.productId,
+          productName: product.productname,
+          quantity: quantity,
+          price: price,
+        });
+      }
+  
+      // Update state with the collected product details
+      setProductQuantity(productDetails);
+  
+      // Display the collected information
+      console.log('Product Details:', productDetails);
+    } else {
+      // Inform the user that they need to select a product before entering the quantity
+      Swal.fire({
+        icon: 'warning',
+        title: 'Please select a product first',
+      });
+    }
+  };
+  
+  
+
+
   return (
     <>
       <div>
@@ -453,36 +552,23 @@ function SupplierMaster() {
               </div>
 
               <div className="company-id col-12 col-md-6 col-lg-6 col-xl-6">
-                <label htmlFor="Branch" className='form-label'>Product Name</label>
-                <select name="Branch" id="branch-select" className='form-select col-12 mb-3' onChange={(e) => setselectedProductId(e.target.value)}
-                  value={selectedProductId} >
-                  <option value="">Select Product</option>
-                  {getdata && getdata.filter(data => data.status === "Active")
-                    .map((data, index) => (
-                      <option key={index} value={data.productname}>
-                        {data.productname}
-                      </option>
-                    ))}
-                </select>
+                <Form.Group>
+                  <Form.Label>Select The Product</Form.Label>
+                  <Typeahead
+                    id="basic-typeahead-multiple"
+                    labelKey="productname"
+                    multiple
+                    options={getdata}
+                    onChange={(selectedProducts) => {
+                      SetProductSelection(selectedProducts);
+                      getvalue(selectedProducts);
+                    }}
+                    placeholder="Choose Your Product"
+                    selected={ProductSelection}
+                  />
+                </Form.Group>
               </div>
 
-
-              <div className="branch-name col-12 col-md-6 col-lg-6 col-xl-6">
-                <label htmlFor="branch-name" className='form-label'>Quantity</label>
-                <input type="tel" className='form-control mb-3' maxLength={10} onKeyDown={handleKeyDown} autoComplete="nope"
-                  value={SupplierData.Qtykg}
-                  placeholder='Enter Purchase Quantity'
-                  onChange={(e) => { setSupplierData({ ...SupplierData, Qtykg: e.target.value }) }} />
-              </div>
-
-
-              <div className="branch-name col-12 col-md-6 col-lg-6 col-xl-6">
-                <label htmlFor="branch-name" className='form-label'>Amount</label>
-                <input type="tel" className='form-control mb-3' maxLength={7} onKeyDown={handleKeyDown} autoComplete="nope"
-                  value={SupplierData.Amount}
-                  placeholder='Enter Amount'
-                  onChange={(e) => { setSupplierData({ ...SupplierData, Amount: e.target.value }) }} />
-              </div>
 
               <div className="branch-name col-12 col-md-6 col-lg-6 col-xl-6">
                 <label htmlFor="branch-name" className='form-label'>Address</label>
@@ -591,8 +677,8 @@ function SupplierMaster() {
 
               <div className="company-id col-12 col-md-6 col-lg-6 col-xl-6">
                 <label htmlFor="Branch" className='form-label'>Product Name</label>
-                <select name="Branch" id="branch-select" className='form-select col-12 mb-3' 
-                onChange={(e) => {setUpdateSupplierData({...UpdateSupplierData,productid:e.target.value}) }}
+                <select name="Branch" id="branch-select" className='form-select col-12 mb-3'
+                  onChange={(e) => { setUpdateSupplierData({ ...UpdateSupplierData, productid: e.target.value }) }}
                   value={UpdateSupplierData.productid} >
                   <option value="">Select Product</option>
                   {getdata && getdata.filter(data => data.status === "Active")
